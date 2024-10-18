@@ -1,0 +1,137 @@
+name: "PR checks"
+
+on:
+  pull_request:
+    branches: [ 'master', 'stable-*', 'feature/*' ]
+
+jobs:
+
+  check_commit:
+    runs-on: ubuntu-latest
+    if: ${{ github.base_ref == 'master' }}
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.after }}  # for PR avoids checking out merge commit
+        fetch-depth: 0  # include all history
+
+    - name: Run script to validate commits for both pull request and a push
+      env:
+        GITHUB_PR_COMMITS_URL: ${{ github.event.pull_request.commits_url }}
+        GITHUB_USER: ${{ github.event.pull_request.user.login }}
+        START_COMMIT: ${{ github.event.before }}
+        END_COMMIT: ${{ github.event.after }}
+      run: |
+        curl https://raw.githubusercontent.com/ansible/galaxy_ng/master/.ci/scripts/validate_commit_message_custom.py | python
+
+  pr-checks:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: "Checkout ansible-hub-ui (${{ github.ref }})"
+      uses: actions/checkout@v2
+
+    - name: "Install node 14"
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+        cache: 'npm'
+
+    - name: "Checks"
+      run: |
+        # fail if npm install had to change package-lock.json
+        npm install
+        git diff --exit-code package-lock.json
+
+        # same in test/
+        pushd test/
+        npm install
+        git diff --exit-code package-lock.json
+        popd
+
+        # dependencies
+        pip install lint-po yamllint
+
+        # run linters
+        npm run lint
+
+  merge-commits:
+    runs-on: ubuntu-latest
+    steps:
+
+    # need to checkout out head, the merge commit won't have any merges in history
+    # also need more than 1 commit, assuming no PR will have more than 128
+    - name: "Checkout ansible-hub-ui HEAD"
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 128
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: "Ensure no merge commits"
+      run: |
+        # fail on merge commits in the PR
+        # since squash&merge doesn't create merge commits,
+        # and the last non-squash merges were in Jul 2019,
+        # we can just look for any merge commits since 2020
+        count=`git log --min-parents=2 --since 2020-01-01 | tee /dev/stderr | wc -l`
+        [ "$count" = 0 ]
+
+  webpack-config:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: "Checkout ansible-hub-ui (${{ github.base_ref }})"
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.base_ref }}
+        path: 'base'
+
+    - name: "Checkout ansible-hub-ui (${{ github.ref }})"
+      uses: actions/checkout@v2
+      with:
+        path: 'pr'
+
+    - name: "Install node 14"
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+        cache: 'npm'
+        cache-dependency-path: |
+          base/package-lock.json
+          pr/package-lock.json
+
+    - name: "Diff configs"
+      run: |
+        mkdir ~/webpack-config/
+
+        for version in base pr; do
+          mkdir ~/webpack-config/$version/
+          pushd $version/config/
+          npm install
+
+          for file in *.js; do
+            # FIXME: that's what TARGET_ENVIRONMENT is for
+            NODE_ENV=
+            if grep -q prod <<< "$file"; then
+              NODE_ENV=production
+            fi
+            export NODE_ENV
+
+            # eliminate differences caused by branch name based logic in f-c-config
+            export BRANCH="${{ github.base_ref }}"
+
+            node -e 'console.log(JSON.stringify(require("./'"$file"'"), null, 2))' |
+              sed -e 's/\/home\/.*\/\(base\|pr\)\//\/DIR\//g' \
+                -e 's/\(\[name\]\|automationHub\)\.[0-9]\+\.\(\[fullhash\]\)/\1.TIMESTAMP.\2/g' \
+                -e 's/"UI_COMMIT_HASH": ".*"/"UI_COMMIT_HASH": "HASH"/' |
+              perl -ne 'print unless /^[0-9a-f]{64,64}$/d' |
+              grep -v '^Current branch:' |
+              grep -v '^Root folder:' > ~/webpack-config/"$version"/"$file".json
+          done
+
+          popd
+        done
+
+        diff -Naur ~/webpack-config/{base,pr}

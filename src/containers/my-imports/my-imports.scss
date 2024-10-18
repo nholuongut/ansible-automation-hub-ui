@@ -1,0 +1,14 @@
+@import '../../global-variables.scss';
+
+.hub-page-container {
+  display: flex;
+
+  .import-list {
+    width: 400px;
+  }
+
+  .hub-import-console {
+    flex-grow: 1;
+    margin-left: 10px;
+  }
+}

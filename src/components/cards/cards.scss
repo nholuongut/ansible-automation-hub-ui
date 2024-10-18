@@ -1,0 +1,67 @@
+.hub-c-card-ns-container {
+  width: 300px;
+
+  .title {
+    font-weight: bold;
+  }
+
+  .ns-name {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 180px;
+  }
+}
+
+.hub-c-card-collection-container {
+  width: 280px;
+
+  // For some reason the PF Card components overrides all the defaults for
+  // divs
+  div {
+    display: block;
+  }
+
+  .name {
+    font-weight: bold;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  .author .pf-c-content small {
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  .type-label {
+    font-size: var(--pf-global--FontSize--xs);
+    color: var(--pf-global--color--200);
+    text-transform: capitalize;
+  }
+
+  .type-container {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .logo-row {
+    display: flex;
+    justify-content: space-between;
+
+    .icon {
+      color: var(--pf-global--info-color--100);
+      margin-right: 3px;
+    }
+
+    .hub-signature-badge {
+      margin-left: 5px;
+    }
+  }
+
+  .description {
+    height: 48px;
+    overflow: hidden;
+  }
+}

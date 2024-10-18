@@ -1,0 +1,36 @@
+.hub-namespace-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .card-area {
+    margin-top: 24px;
+    margin-left: 24px;
+    flex-grow: 1;
+
+    .card-layout {
+      display: flex;
+      flex-wrap: wrap;
+
+      .card-wrapper {
+        margin-right: 24px;
+        margin-bottom: 24px;
+      }
+    }
+  }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .pf-c-toolbar__content {
+    padding-left: 0;
+  }
+
+  .footer {
+    border-top: 1px solid #d8d8d8;
+    flex-shrink: 0;
+  }
+}

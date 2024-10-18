@@ -1,0 +1,41 @@
+.single-line-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layers-max-width {
+  max-width: 45%;
+  word-wrap: break-word;
+}
+
+.copy-sha {
+  padding-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.eco-clipboard-copy {
+  display: inline-block;
+
+  .pf-c-clipboard-copy__group {
+    align-items: baseline;
+  }
+
+  input {
+    width: 37em;
+    border: none;
+    background: transparent !important;
+    text-overflow: ellipsis;
+  }
+
+  button {
+    padding: 0;
+    margin-left: 5px !important;
+    color: var(--pf-global--Color--200) !important;
+  }
+
+  .pf-c-button::after {
+    border: none !important;
+  }
+}
